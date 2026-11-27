@@ -1,0 +1,1769 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>慕尼黑工资计算器 · 2026</title><style>:root{--ink:#17252e;--muted:#5d6b74;--line:#d9dfe3;--accent:#176359}*{box-sizing:border-box}body{margin:0;background:#f3f5f6;color:var(--ink);font:15px/1.65 'Segoe UI','Microsoft YaHei',sans-serif}main{max-width:1180px;margin:auto;padding:36px 24px}header{border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:26px}h1{font-size:27px;margin:3px 0}h2{font-size:18px;margin:0 0 18px}p{margin:8px 0;color:var(--muted)}.eyebrow{font-size:12px;letter-spacing:2px;color:var(--accent)}.layout{display:grid;grid-template-columns:365px 1fr;gap:24px;align-items:start}.panel{background:white;border:1px solid var(--line);border-radius:8px;padding:24px}.fields{display:grid;grid-template-columns:1fr 1fr;gap:15px}.wide{grid-column:1/-1}label{display:block;font-size:13px;color:var(--muted)}input,select,button{font:inherit;min-height:44px;border:1px solid #b9c4ca;border-radius:4px;background:white;color:var(--ink);padding:8px 10px;width:100%;margin-top:5px}input:focus,select:focus,button:focus{outline:2px solid var(--accent);outline-offset:2px}.metric{display:flex;justify-content:space-between;align-items:baseline;padding-bottom:20px;border-bottom:1px solid var(--line)}.metric strong{font-size:34px;font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums}.metric select{width:110px}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}th,td{padding:12px 5px;border-bottom:1px solid #e6eaec;text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}td small{display:block;color:var(--muted);font-size:11px}thead{color:var(--muted)}tr.net{font-weight:700;color:var(--accent)}.note{padding:14px;background:#edf2f2;margin:16px 0;font-size:13px}.error{color:#a12929;white-space:pre-wrap}details{margin-top:20px}summary{cursor:pointer;font-weight:600;min-height:44px}a{color:var(--accent)}footer{font-size:12px;color:var(--muted);margin-top:22px}#bar{height:8px;display:flex;margin-top:18px;overflow:hidden;border-radius:3px}#bar span{display:block}button{cursor:pointer} @media(max-width:800px){main{padding:22px 14px}.layout{grid-template-columns:1fr}.panel{padding:18px}.metric strong{font-size:29px}}@media print{body{background:white}.layout{grid-template-columns:1fr}button{display:none}details{display:block}}</style><main><header><div class="eyebrow">MÜNCHEN / BAYERN · 2026</div><h1>税前到税后，逐项看清</h1><p>德国普通受雇员工工资预扣测算 · 离线运行，数据不上传</p></header><div class="layout"><section class="panel"><h2>计算参数</h2><form id="form"><div class="fields"><label class="wide">税前工资 Brutto<input id="gross" type="number" min="0" step="0.01" value="5750" required></label><label>输入口径<select id="basis"><option value="month">月薪</option><option value="year">年薪（均分 12 月）</option></select></label><label>计税年度<select id="year"><option>2026</option></select></label><label>税卡等级<select id="klass"><option value="1">I</option><option value="2">II</option><option value="3">III</option><option value="4">IV</option><option value="5">V</option><option value="6">VI</option></select></label><label>IV 类 Faktor<input id="factor" type="number" min="0.001" max="1" step="0.001" value="1"></label><label>教会税<select id="church"><option value="0">不缴纳</option><option value="1">缴纳 · 巴伐利亚 8%</option></select></label><label>ZKF（情景值）<select id="zkf"><option value="unknown">未知 · 三情景</option><option>0</option><option>0.5</option><option>1</option><option>1.5</option><option>2</option></select></label><label class="wide">GKV 完整附加费率 Zusatzbeitrag (%)<input id="kvz" type="number" min="0" max="10" step="0.01" value="2.69"></label><label>护理保险身份<select id="parent"><option value="1">具有父母身份</option><option value="0">无子女</option></select></label><label>未满 25 岁子女人数<input id="children" type="number" min="0" max="20" step="1" value="1"></label><label class="wide">出生日期（本例仅知月份，按月核对适用范围）<input id="birth" type="month" value="1984-10" required></label><label>额外年免税额 €<input id="free" type="number" min="0" step="0.01" value="0"></label><label>年加计金额 €<input id="add" type="number" min="0" step="0.01" value="0"></label></div><button id="calculate" type="submit" style="background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;margin-top:20px">计算</button><button type="reset">恢复已确认参数</button></form><p style="font-size:12px">固定条件：全年 12 次等额发薪、无奖金／实物福利；GKV 一般费率 14.6%，法定养老及失业保险，巴伐利亚工作地。</p></section><section class="panel"><h2>工资单口径净工资</h2><div id="error" class="error" role="alert"></div><div id="results" aria-live="polite"><div class="metric"><strong id="net"></strong><select id="view" aria-label="净额显示口径"><option value="1">每月</option><option value="12">全年累计</option></select></div><div id="bar" aria-hidden="true"></div><p id="ratio"></p><div class="tablewrap"><table><thead><tr><th>项目／个人承担费率</th><th>每月 €</th><th>全年 €</th></tr></thead><tbody id="rows"></tbody></table></div><div class="note" id="scenario"></div><details><summary>计算规则与适用边界</summary><p>工资税、团结附加税及教会税计税基数采用 BMF 2026 官方 Programmablaufplan（XML）算法，嵌入十进制定点舍入逻辑。社保各项按月计费、四舍五入到分，年度为 12 个月累计，不是年度报税结果。工资税按月向下截取至分。</p><p>2026 月缴费上限：养老／失业 €8,450；医保／护理 €5,812.50。自 2025 年起养老上限全国统一，不再区分东西德。父母身份免除无子女附加费；第二至第五名未满 25 岁子女各减 0.25 个百分点。</p><p>工资税 Vorsorgepauschale 中医保按 7%＋半数附加费率核算，实际工资扣款按 7.3%＋半数附加费率。两者不可混淆。</p><p>不支持 Minijob／Midijob、PKV、退休或供养收入、64 岁以上年龄减免、23 岁跨龄的无子女月份处理、年内子女人数变化、奖金、公司车及特殊社保身份。不符合范围时不会输出伪精确结果。税级 II 资格、Faktor 与 ZKF 应以 ELStAM 为准；本工具不判断资格。</p><p id="diagnostic"></p></details></div></section></div><section class="panel" style="margin-top:24px"><h2>如何查询 ZKF</h2><p>① 在最新月工资单上找 <b>Kinderfreibetrag、Ki.Frbtr.、ZKF 或 Zahl der Kinderfreibeträge</b>，填写该栏系数，不是 Kindergeld 金额，也不是护理保险子女人数。</p><p>② 登录 Mein ELSTER，在“Formulare &amp; Leistungen”中查找“<b>Auskunft zur elektronischen Lohnsteuerkarte (ELStAM)</b>”，查询登记信息；菜单可能调整，可直接搜索 ELStAM。</p><p>③ 查不到时，可询问薪资部门：<i>Welche Zahl der Kinderfreibeträge ist in meinen aktuellen ELStAM hinterlegt?</i> 也可向居住地主管 Finanzamt 咨询。不要仅凭有一名子女推定为 0.5 或 1.0。</p></section><footer><b>测算结果仅供参考，最终以工资单（Gehaltsabrechnung）及税务局核算为准。</b><p>来源：<a href="https://www.bmf-steuerrechner.de/javax.faces.resource/daten/xmls/Lohnsteuer2026.xml.xhtml">BMF 2026 官方 PAP XML</a> · <a href="https://www.aok.de/fk/bayern/tools/weitere-inhalte/beitraege-und-rechengroessen-der-sozialversicherung/beitragssaetze/">AOK Bayern 2026 费率</a> · <a href="https://www.bundesregierung.de/breg-de/aktuelles/beitragsgemessungsgrenzen-2386514">2026 社保上限</a> · <a href="https://www.elster.de/elsterweb/infoseite/elstam_(privatpersonen)">ELSTER</a></p><p>单文件内嵌 big.js 6.2.2（MIT）及从官方 XML 转译的计算逻辑；无网络依赖。ZKF 未确认时保持情景标识，不保存个人数据。</p></footer></main><script>
+/*
+ *  big.js v6.2.2
+ *  A small, fast, easy-to-use library for arbitrary-precision decimal arithmetic.
+ *  Copyright (c) 2024 Michael Mclaughlin
+ *  https://github.com/MikeMcl/big.js/LICENCE.md
+ */
+;(function (GLOBAL) {
+  'use strict';
+  var Big,
+
+
+/************************************** EDITABLE DEFAULTS *****************************************/
+
+
+    // The default values below must be integers within the stated ranges.
+
+    /*
+     * The maximum number of decimal places (DP) of the results of operations involving division:
+     * div and sqrt, and pow with negative exponents.
+     */
+    DP = 20,            // 0 to MAX_DP
+
+    /*
+     * The rounding mode (RM) used when rounding to the above decimal places.
+     *
+     *  0  Towards zero (i.e. truncate, no rounding).       (ROUND_DOWN)
+     *  1  To nearest neighbour. If equidistant, round up.  (ROUND_HALF_UP)
+     *  2  To nearest neighbour. If equidistant, to even.   (ROUND_HALF_EVEN)
+     *  3  Away from zero.                                  (ROUND_UP)
+     */
+    RM = 1,             // 0, 1, 2 or 3
+
+    // The maximum value of DP and Big.DP.
+    MAX_DP = 1E6,       // 0 to 1000000
+
+    // The maximum magnitude of the exponent argument to the pow method.
+    MAX_POWER = 1E6,    // 1 to 1000000
+
+    /*
+     * The negative exponent (NE) at and beneath which toString returns exponential notation.
+     * (JavaScript numbers: -7)
+     * -1000000 is the minimum recommended exponent value of a Big.
+     */
+    NE = -7,            // 0 to -1000000
+
+    /*
+     * The positive exponent (PE) at and above which toString returns exponential notation.
+     * (JavaScript numbers: 21)
+     * 1000000 is the maximum recommended exponent value of a Big, but this limit is not enforced.
+     */
+    PE = 21,            // 0 to 1000000
+
+    /*
+     * When true, an error will be thrown if a primitive number is passed to the Big constructor,
+     * or if valueOf is called, or if toNumber is called on a Big which cannot be converted to a
+     * primitive number without a loss of precision.
+     */
+    STRICT = false,     // true or false
+
+
+/**************************************************************************************************/
+
+
+    // Error messages.
+    NAME = '[big.js] ',
+    INVALID = NAME + 'Invalid ',
+    INVALID_DP = INVALID + 'decimal places',
+    INVALID_RM = INVALID + 'rounding mode',
+    DIV_BY_ZERO = NAME + 'Division by zero',
+
+    // The shared prototype object.
+    P = {},
+    UNDEFINED = void 0,
+    NUMERIC = /^-?(\d+(\.\d*)?|\.\d+)(e[+-]?\d+)?$/i;
+
+
+  /*
+   * Create and return a Big constructor.
+   */
+  function _Big_() {
+
+    /*
+     * The Big constructor and exported function.
+     * Create and return a new instance of a Big number object.
+     *
+     * n {number|string|Big} A numeric value.
+     */
+    function Big(n) {
+      var x = this;
+
+      // Enable constructor usage without new.
+      if (!(x instanceof Big)) return n === UNDEFINED ? _Big_() : new Big(n);
+
+      // Duplicate.
+      if (n instanceof Big) {
+        x.s = n.s;
+        x.e = n.e;
+        x.c = n.c.slice();
+      } else {
+        if (typeof n !== 'string') {
+          if (Big.strict === true && typeof n !== 'bigint') {
+            throw TypeError(INVALID + 'value');
+          }
+
+          // Minus zero?
+          n = n === 0 && 1 / n < 0 ? '-0' : String(n);
+        }
+
+        parse(x, n);
+      }
+
+      // Retain a reference to this Big constructor.
+      // Shadow Big.prototype.constructor which points to Object.
+      x.constructor = Big;
+    }
+
+    Big.prototype = P;
+    Big.DP = DP;
+    Big.RM = RM;
+    Big.NE = NE;
+    Big.PE = PE;
+    Big.strict = STRICT;
+    Big.roundDown = 0;
+    Big.roundHalfUp = 1;
+    Big.roundHalfEven = 2;
+    Big.roundUp = 3;
+
+    return Big;
+  }
+
+
+  /*
+   * Parse the number or string value passed to a Big constructor.
+   *
+   * x {Big} A Big number instance.
+   * n {number|string} A numeric value.
+   */
+  function parse(x, n) {
+    var e, i, nl;
+
+    if (!NUMERIC.test(n)) {
+      throw Error(INVALID + 'number');
+    }
+
+    // Determine sign.
+    x.s = n.charAt(0) == '-' ? (n = n.slice(1), -1) : 1;
+
+    // Decimal point?
+    if ((e = n.indexOf('.')) > -1) n = n.replace('.', '');
+
+    // Exponential form?
+    if ((i = n.search(/e/i)) > 0) {
+
+      // Determine exponent.
+      if (e < 0) e = i;
+      e += +n.slice(i + 1);
+      n = n.substring(0, i);
+    } else if (e < 0) {
+
+      // Integer.
+      e = n.length;
+    }
+
+    nl = n.length;
+
+    // Determine leading zeros.
+    for (i = 0; i < nl && n.charAt(i) == '0';) ++i;
+
+    if (i == nl) {
+
+      // Zero.
+      x.c = [x.e = 0];
+    } else {
+
+      // Determine trailing zeros.
+      for (; nl > 0 && n.charAt(--nl) == '0';);
+      x.e = e - i - 1;
+      x.c = [];
+
+      // Convert string to array of digits without leading/trailing zeros.
+      for (e = 0; i <= nl;) x.c[e++] = +n.charAt(i++);
+    }
+
+    return x;
+  }
+
+
+  /*
+   * Round Big x to a maximum of sd significant digits using rounding mode rm.
+   *
+   * x {Big} The Big to round.
+   * sd {number} Significant digits: integer, 0 to MAX_DP inclusive.
+   * rm {number} Rounding mode: 0 (down), 1 (half-up), 2 (half-even) or 3 (up).
+   * [more] {boolean} Whether the result of division was truncated.
+   */
+  function round(x, sd, rm, more) {
+    var xc = x.c;
+
+    if (rm === UNDEFINED) rm = x.constructor.RM;
+    if (rm !== 0 && rm !== 1 && rm !== 2 && rm !== 3) {
+      throw Error(INVALID_RM);
+    }
+
+    if (sd < 1) {
+      more =
+        rm === 3 && (more || !!xc[0]) || sd === 0 && (
+        rm === 1 && xc[0] >= 5 ||
+        rm === 2 && (xc[0] > 5 || xc[0] === 5 && (more || xc[1] !== UNDEFINED))
+      );
+
+      xc.length = 1;
+
+      if (more) {
+
+        // 1, 0.1, 0.01, 0.001, 0.0001 etc.
+        x.e = x.e - sd + 1;
+        xc[0] = 1;
+      } else {
+
+        // Zero.
+        xc[0] = x.e = 0;
+      }
+    } else if (sd < xc.length) {
+
+      // xc[sd] is the digit after the digit that may be rounded up.
+      more =
+        rm === 1 && xc[sd] >= 5 ||
+        rm === 2 && (xc[sd] > 5 || xc[sd] === 5 &&
+          (more || xc[sd + 1] !== UNDEFINED || xc[sd - 1] & 1)) ||
+        rm === 3 && (more || !!xc[0]);
+
+      // Remove any digits after the required precision.
+      xc.length = sd;
+
+      // Round up?
+      if (more) {
+
+        // Rounding up may mean the previous digit has to be rounded up.
+        for (; ++xc[--sd] > 9;) {
+          xc[sd] = 0;
+          if (sd === 0) {
+            ++x.e;
+            xc.unshift(1);
+            break;
+          }
+        }
+      }
+
+      // Remove trailing zeros.
+      for (sd = xc.length; !xc[--sd];) xc.pop();
+    }
+
+    return x;
+  }
+
+
+  /*
+   * Return a string representing the value of Big x in normal or exponential notation.
+   * Handles P.toExponential, P.toFixed, P.toJSON, P.toPrecision, P.toString and P.valueOf.
+   */
+  function stringify(x, doExponential, isNonzero) {
+    var e = x.e,
+      s = x.c.join(''),
+      n = s.length;
+
+    // Exponential notation?
+    if (doExponential) {
+      s = s.charAt(0) + (n > 1 ? '.' + s.slice(1) : '') + (e < 0 ? 'e' : 'e+') + e;
+
+    // Normal notation.
+    } else if (e < 0) {
+      for (; ++e;) s = '0' + s;
+      s = '0.' + s;
+    } else if (e > 0) {
+      if (++e > n) {
+        for (e -= n; e--;) s += '0';
+      } else if (e < n) {
+        s = s.slice(0, e) + '.' + s.slice(e);
+      }
+    } else if (n > 1) {
+      s = s.charAt(0) + '.' + s.slice(1);
+    }
+
+    return x.s < 0 && isNonzero ? '-' + s : s;
+  }
+
+
+  // Prototype/instance methods
+
+
+  /*
+   * Return a new Big whose value is the absolute value of this Big.
+   */
+  P.abs = function () {
+    var x = new this.constructor(this);
+    x.s = 1;
+    return x;
+  };
+
+
+  /*
+   * Return 1 if the value of this Big is greater than the value of Big y,
+   *       -1 if the value of this Big is less than the value of Big y, or
+   *        0 if they have the same value.
+   */
+  P.cmp = function (y) {
+    var isneg,
+      x = this,
+      xc = x.c,
+      yc = (y = new x.constructor(y)).c,
+      i = x.s,
+      j = y.s,
+      k = x.e,
+      l = y.e;
+
+    // Either zero?
+    if (!xc[0] || !yc[0]) return !xc[0] ? !yc[0] ? 0 : -j : i;
+
+    // Signs differ?
+    if (i != j) return i;
+
+    isneg = i < 0;
+
+    // Compare exponents.
+    if (k != l) return k > l ^ isneg ? 1 : -1;
+
+    j = (k = xc.length) < (l = yc.length) ? k : l;
+
+    // Compare digit by digit.
+    for (i = -1; ++i < j;) {
+      if (xc[i] != yc[i]) return xc[i] > yc[i] ^ isneg ? 1 : -1;
+    }
+
+    // Compare lengths.
+    return k == l ? 0 : k > l ^ isneg ? 1 : -1;
+  };
+
+
+  /*
+   * Return a new Big whose value is the value of this Big divided by the value of Big y, rounded,
+   * if necessary, to a maximum of Big.DP decimal places using rounding mode Big.RM.
+   */
+  P.div = function (y) {
+    var x = this,
+      Big = x.constructor,
+      a = x.c,                  // dividend
+      b = (y = new Big(y)).c,   // divisor
+      k = x.s == y.s ? 1 : -1,
+      dp = Big.DP;
+
+    if (dp !== ~~dp || dp < 0 || dp > MAX_DP) {
+      throw Error(INVALID_DP);
+    }
+
+    // Divisor is zero?
+    if (!b[0]) {
+      throw Error(DIV_BY_ZERO);
+    }
+
+    // Dividend is 0? Return +-0.
+    if (!a[0]) {
+      y.s = k;
+      y.c = [y.e = 0];
+      return y;
+    }
+
+    var bl, bt, n, cmp, ri,
+      bz = b.slice(),
+      ai = bl = b.length,
+      al = a.length,
+      r = a.slice(0, bl),   // remainder
+      rl = r.length,
+      q = y,                // quotient
+      qc = q.c = [],
+      qi = 0,
+      p = dp + (q.e = x.e - y.e) + 1;    // precision of the result
+
+    q.s = k;
+    k = p < 0 ? 0 : p;
+
+    // Create version of divisor with leading zero.
+    bz.unshift(0);
+
+    // Add zeros to make remainder as long as divisor.
+    for (; rl++ < bl;) r.push(0);
+
+    do {
+
+      // n is how many times the divisor goes into current remainder.
+      for (n = 0; n < 10; n++) {
+
+        // Compare divisor and remainder.
+        if (bl != (rl = r.length)) {
+          cmp = bl > rl ? 1 : -1;
+        } else {
+          for (ri = -1, cmp = 0; ++ri < bl;) {
+            if (b[ri] != r[ri]) {
+              cmp = b[ri] > r[ri] ? 1 : -1;
+              break;
+            }
+          }
+        }
+
+        // If divisor < remainder, subtract divisor from remainder.
+        if (cmp < 0) {
+
+          // Remainder can't be more than 1 digit longer than divisor.
+          // Equalise lengths using divisor with extra leading zero?
+          for (bt = rl == bl ? b : bz; rl;) {
+            if (r[--rl] < bt[rl]) {
+              ri = rl;
+              for (; ri && !r[--ri];) r[ri] = 9;
+              --r[ri];
+              r[rl] += 10;
+            }
+            r[rl] -= bt[rl];
+          }
+
+          for (; !r[0];) r.shift();
+        } else {
+          break;
+        }
+      }
+
+      // Add the digit n to the result array.
+      qc[qi++] = cmp ? n : ++n;
+
+      // Update the remainder.
+      if (r[0] && cmp) r[rl] = a[ai] || 0;
+      else r = [a[ai]];
+
+    } while ((ai++ < al || r[0] !== UNDEFINED) && k--);
+
+    // Leading zero? Do not remove if result is simply zero (qi == 1).
+    if (!qc[0] && qi != 1) {
+
+      // There can't be more than one zero.
+      qc.shift();
+      q.e--;
+      p--;
+    }
+
+    // Round?
+    if (qi > p) round(q, p, Big.RM, r[0] !== UNDEFINED);
+
+    return q;
+  };
+
+
+  /*
+   * Return true if the value of this Big is equal to the value of Big y, otherwise return false.
+   */
+  P.eq = function (y) {
+    return this.cmp(y) === 0;
+  };
+
+
+  /*
+   * Return true if the value of this Big is greater than the value of Big y, otherwise return
+   * false.
+   */
+  P.gt = function (y) {
+    return this.cmp(y) > 0;
+  };
+
+
+  /*
+   * Return true if the value of this Big is greater than or equal to the value of Big y, otherwise
+   * return false.
+   */
+  P.gte = function (y) {
+    return this.cmp(y) > -1;
+  };
+
+
+  /*
+   * Return true if the value of this Big is less than the value of Big y, otherwise return false.
+   */
+  P.lt = function (y) {
+    return this.cmp(y) < 0;
+  };
+
+
+  /*
+   * Return true if the value of this Big is less than or equal to the value of Big y, otherwise
+   * return false.
+   */
+  P.lte = function (y) {
+    return this.cmp(y) < 1;
+  };
+
+
+  /*
+   * Return a new Big whose value is the value of this Big minus the value of Big y.
+   */
+  P.minus = P.sub = function (y) {
+    var i, j, t, xlty,
+      x = this,
+      Big = x.constructor,
+      a = x.s,
+      b = (y = new Big(y)).s;
+
+    // Signs differ?
+    if (a != b) {
+      y.s = -b;
+      return x.plus(y);
+    }
+
+    var xc = x.c.slice(),
+      xe = x.e,
+      yc = y.c,
+      ye = y.e;
+
+    // Either zero?
+    if (!xc[0] || !yc[0]) {
+      if (yc[0]) {
+        y.s = -b;
+      } else if (xc[0]) {
+        y = new Big(x);
+      } else {
+        y.s = 1;
+      }
+      return y;
+    }
+
+    // Determine which is the bigger number. Prepend zeros to equalise exponents.
+    if (a = xe - ye) {
+
+      if (xlty = a < 0) {
+        a = -a;
+        t = xc;
+      } else {
+        ye = xe;
+        t = yc;
+      }
+
+      t.reverse();
+      for (b = a; b--;) t.push(0);
+      t.reverse();
+    } else {
+
+      // Exponents equal. Check digit by digit.
+      j = ((xlty = xc.length < yc.length) ? xc : yc).length;
+
+      for (a = b = 0; b < j; b++) {
+        if (xc[b] != yc[b]) {
+          xlty = xc[b] < yc[b];
+          break;
+        }
+      }
+    }
+
+    // x < y? Point xc to the array of the bigger number.
+    if (xlty) {
+      t = xc;
+      xc = yc;
+      yc = t;
+      y.s = -y.s;
+    }
+
+    /*
+     * Append zeros to xc if shorter. No need to add zeros to yc if shorter as subtraction only
+     * needs to start at yc.length.
+     */
+    if ((b = (j = yc.length) - (i = xc.length)) > 0) for (; b--;) xc[i++] = 0;
+
+    // Subtract yc from xc.
+    for (b = i; j > a;) {
+      if (xc[--j] < yc[j]) {
+        for (i = j; i && !xc[--i];) xc[i] = 9;
+        --xc[i];
+        xc[j] += 10;
+      }
+
+      xc[j] -= yc[j];
+    }
+
+    // Remove trailing zeros.
+    for (; xc[--b] === 0;) xc.pop();
+
+    // Remove leading zeros and adjust exponent accordingly.
+    for (; xc[0] === 0;) {
+      xc.shift();
+      --ye;
+    }
+
+    if (!xc[0]) {
+
+      // n - n = +0
+      y.s = 1;
+
+      // Result must be zero.
+      xc = [ye = 0];
+    }
+
+    y.c = xc;
+    y.e = ye;
+
+    return y;
+  };
+
+
+  /*
+   * Return a new Big whose value is the value of this Big modulo the value of Big y.
+   */
+  P.mod = function (y) {
+    var ygtx,
+      x = this,
+      Big = x.constructor,
+      a = x.s,
+      b = (y = new Big(y)).s;
+
+    if (!y.c[0]) {
+      throw Error(DIV_BY_ZERO);
+    }
+
+    x.s = y.s = 1;
+    ygtx = y.cmp(x) == 1;
+    x.s = a;
+    y.s = b;
+
+    if (ygtx) return new Big(x);
+
+    a = Big.DP;
+    b = Big.RM;
+    Big.DP = Big.RM = 0;
+    x = x.div(y);
+    Big.DP = a;
+    Big.RM = b;
+
+    return this.minus(x.times(y));
+  };
+  
+  
+  /*
+   * Return a new Big whose value is the value of this Big negated.
+   */
+  P.neg = function () {
+    var x = new this.constructor(this);
+    x.s = -x.s;
+    return x;
+  };
+
+
+  /*
+   * Return a new Big whose value is the value of this Big plus the value of Big y.
+   */
+  P.plus = P.add = function (y) {
+    var e, k, t,
+      x = this,
+      Big = x.constructor;
+
+    y = new Big(y);
+
+    // Signs differ?
+    if (x.s != y.s) {
+      y.s = -y.s;
+      return x.minus(y);
+    }
+
+    var xe = x.e,
+      xc = x.c,
+      ye = y.e,
+      yc = y.c;
+
+    // Either zero?
+    if (!xc[0] || !yc[0]) {
+      if (!yc[0]) {
+        if (xc[0]) {
+          y = new Big(x);
+        } else {
+          y.s = x.s;
+        }
+      }
+      return y;
+    }
+
+    xc = xc.slice();
+
+    // Prepend zeros to equalise exponents.
+    // Note: reverse faster than unshifts.
+    if (e = xe - ye) {
+      if (e > 0) {
+        ye = xe;
+        t = yc;
+      } else {
+        e = -e;
+        t = xc;
+      }
+
+      t.reverse();
+      for (; e--;) t.push(0);
+      t.reverse();
+    }
+
+    // Point xc to the longer array.
+    if (xc.length - yc.length < 0) {
+      t = yc;
+      yc = xc;
+      xc = t;
+    }
+
+    e = yc.length;
+
+    // Only start adding at yc.length - 1 as the further digits of xc can be left as they are.
+    for (k = 0; e; xc[e] %= 10) k = (xc[--e] = xc[e] + yc[e] + k) / 10 | 0;
+
+    // No need to check for zero, as +x + +y != 0 && -x + -y != 0
+
+    if (k) {
+      xc.unshift(k);
+      ++ye;
+    }
+
+    // Remove trailing zeros.
+    for (e = xc.length; xc[--e] === 0;) xc.pop();
+
+    y.c = xc;
+    y.e = ye;
+
+    return y;
+  };
+
+
+  /*
+   * Return a Big whose value is the value of this Big raised to the power n.
+   * If n is negative, round to a maximum of Big.DP decimal places using rounding
+   * mode Big.RM.
+   *
+   * n {number} Integer, -MAX_POWER to MAX_POWER inclusive.
+   */
+  P.pow = function (n) {
+    var x = this,
+      one = new x.constructor('1'),
+      y = one,
+      isneg = n < 0;
+
+    if (n !== ~~n || n < -MAX_POWER || n > MAX_POWER) {
+      throw Error(INVALID + 'exponent');
+    }
+
+    if (isneg) n = -n;
+
+    for (;;) {
+      if (n & 1) y = y.times(x);
+      n >>= 1;
+      if (!n) break;
+      x = x.times(x);
+    }
+
+    return isneg ? one.div(y) : y;
+  };
+
+
+  /*
+   * Return a new Big whose value is the value of this Big rounded to a maximum precision of sd
+   * significant digits using rounding mode rm, or Big.RM if rm is not specified.
+   *
+   * sd {number} Significant digits: integer, 1 to MAX_DP inclusive.
+   * rm? {number} Rounding mode: 0 (down), 1 (half-up), 2 (half-even) or 3 (up).
+   */
+  P.prec = function (sd, rm) {
+    if (sd !== ~~sd || sd < 1 || sd > MAX_DP) {
+      throw Error(INVALID + 'precision');
+    }
+    return round(new this.constructor(this), sd, rm);
+  };
+
+
+  /*
+   * Return a new Big whose value is the value of this Big rounded to a maximum of dp decimal places
+   * using rounding mode rm, or Big.RM if rm is not specified.
+   * If dp is negative, round to an integer which is a multiple of 10**-dp.
+   * If dp is not specified, round to 0 decimal places.
+   *
+   * dp? {number} Integer, -MAX_DP to MAX_DP inclusive.
+   * rm? {number} Rounding mode: 0 (down), 1 (half-up), 2 (half-even) or 3 (up).
+   */
+  P.round = function (dp, rm) {
+    if (dp === UNDEFINED) dp = 0;
+    else if (dp !== ~~dp || dp < -MAX_DP || dp > MAX_DP) {
+      throw Error(INVALID_DP);
+    }
+    return round(new this.constructor(this), dp + this.e + 1, rm);
+  };
+
+
+  /*
+   * Return a new Big whose value is the square root of the value of this Big, rounded, if
+   * necessary, to a maximum of Big.DP decimal places using rounding mode Big.RM.
+   */
+  P.sqrt = function () {
+    var r, c, t,
+      x = this,
+      Big = x.constructor,
+      s = x.s,
+      e = x.e,
+      half = new Big('0.5');
+
+    // Zero?
+    if (!x.c[0]) return new Big(x);
+
+    // Negative?
+    if (s < 0) {
+      throw Error(NAME + 'No square root');
+    }
+
+    // Estimate.
+    s = Math.sqrt(+stringify(x, true, true));
+
+    // Math.sqrt underflow/overflow?
+    // Re-estimate: pass x coefficient to Math.sqrt as integer, then adjust the result exponent.
+    if (s === 0 || s === 1 / 0) {
+      c = x.c.join('');
+      if (!(c.length + e & 1)) c += '0';
+      s = Math.sqrt(c);
+      e = ((e + 1) / 2 | 0) - (e < 0 || e & 1);
+      r = new Big((s == 1 / 0 ? '5e' : (s = s.toExponential()).slice(0, s.indexOf('e') + 1)) + e);
+    } else {
+      r = new Big(s + '');
+    }
+
+    e = r.e + (Big.DP += 4);
+
+    // Newton-Raphson iteration.
+    do {
+      t = r;
+      r = half.times(t.plus(x.div(t)));
+    } while (t.c.slice(0, e).join('') !== r.c.slice(0, e).join(''));
+
+    return round(r, (Big.DP -= 4) + r.e + 1, Big.RM);
+  };
+
+
+  /*
+   * Return a new Big whose value is the value of this Big times the value of Big y.
+   */
+  P.times = P.mul = function (y) {
+    var c,
+      x = this,
+      Big = x.constructor,
+      xc = x.c,
+      yc = (y = new Big(y)).c,
+      a = xc.length,
+      b = yc.length,
+      i = x.e,
+      j = y.e;
+
+    // Determine sign of result.
+    y.s = x.s == y.s ? 1 : -1;
+
+    // Return signed 0 if either 0.
+    if (!xc[0] || !yc[0]) {
+      y.c = [y.e = 0];
+      return y;
+    }
+
+    // Initialise exponent of result as x.e + y.e.
+    y.e = i + j;
+
+    // If array xc has fewer digits than yc, swap xc and yc, and lengths.
+    if (a < b) {
+      c = xc;
+      xc = yc;
+      yc = c;
+      j = a;
+      a = b;
+      b = j;
+    }
+
+    // Initialise coefficient array of result with zeros.
+    for (c = new Array(j = a + b); j--;) c[j] = 0;
+
+    // Multiply.
+
+    // i is initially xc.length.
+    for (i = b; i--;) {
+      b = 0;
+
+      // a is yc.length.
+      for (j = a + i; j > i;) {
+
+        // Current sum of products at this digit position, plus carry.
+        b = c[j] + yc[i] * xc[j - i - 1] + b;
+        c[j--] = b % 10;
+
+        // carry
+        b = b / 10 | 0;
+      }
+
+      c[j] = b;
+    }
+
+    // Increment result exponent if there is a final carry, otherwise remove leading zero.
+    if (b) ++y.e;
+    else c.shift();
+
+    // Remove trailing zeros.
+    for (i = c.length; !c[--i];) c.pop();
+    y.c = c;
+
+    return y;
+  };
+
+
+  /*
+   * Return a string representing the value of this Big in exponential notation rounded to dp fixed
+   * decimal places using rounding mode rm, or Big.RM if rm is not specified.
+   *
+   * dp? {number} Decimal places: integer, 0 to MAX_DP inclusive.
+   * rm? {number} Rounding mode: 0 (down), 1 (half-up), 2 (half-even) or 3 (up).
+   */
+  P.toExponential = function (dp, rm) {
+    var x = this,
+      n = x.c[0];
+
+    if (dp !== UNDEFINED) {
+      if (dp !== ~~dp || dp < 0 || dp > MAX_DP) {
+        throw Error(INVALID_DP);
+      }
+      x = round(new x.constructor(x), ++dp, rm);
+      for (; x.c.length < dp;) x.c.push(0);
+    }
+
+    return stringify(x, true, !!n);
+  };
+
+
+  /*
+   * Return a string representing the value of this Big in normal notation rounded to dp fixed
+   * decimal places using rounding mode rm, or Big.RM if rm is not specified.
+   *
+   * dp? {number} Decimal places: integer, 0 to MAX_DP inclusive.
+   * rm? {number} Rounding mode: 0 (down), 1 (half-up), 2 (half-even) or 3 (up).
+   *
+   * (-0).toFixed(0) is '0', but (-0.1).toFixed(0) is '-0'.
+   * (-0).toFixed(1) is '0.0', but (-0.01).toFixed(1) is '-0.0'.
+   */
+  P.toFixed = function (dp, rm) {
+    var x = this,
+      n = x.c[0];
+
+    if (dp !== UNDEFINED) {
+      if (dp !== ~~dp || dp < 0 || dp > MAX_DP) {
+        throw Error(INVALID_DP);
+      }
+      x = round(new x.constructor(x), dp + x.e + 1, rm);
+
+      // x.e may have changed if the value is rounded up.
+      for (dp = dp + x.e + 1; x.c.length < dp;) x.c.push(0);
+    }
+
+    return stringify(x, false, !!n);
+  };
+
+
+  /*
+   * Return a string representing the value of this Big.
+   * Return exponential notation if this Big has a positive exponent equal to or greater than
+   * Big.PE, or a negative exponent equal to or less than Big.NE.
+   * Omit the sign for negative zero.
+   */
+  P.toJSON = P.toString = function () {
+    var x = this,
+      Big = x.constructor;
+    return stringify(x, x.e <= Big.NE || x.e >= Big.PE, !!x.c[0]);
+  };
+
+
+  /*
+   * Return the value of this Big as a primitve number.
+   */
+  P.toNumber = function () {
+    var n = +stringify(this, true, true);
+    if (this.constructor.strict === true && !this.eq(n.toString())) {
+      throw Error(NAME + 'Imprecise conversion');
+    }
+    return n;
+  };
+
+
+  /*
+   * Return a string representing the value of this Big rounded to sd significant digits using
+   * rounding mode rm, or Big.RM if rm is not specified.
+   * Use exponential notation if sd is less than the number of digits necessary to represent
+   * the integer part of the value in normal notation.
+   *
+   * sd {number} Significant digits: integer, 1 to MAX_DP inclusive.
+   * rm? {number} Rounding mode: 0 (down), 1 (half-up), 2 (half-even) or 3 (up).
+   */
+  P.toPrecision = function (sd, rm) {
+    var x = this,
+      Big = x.constructor,
+      n = x.c[0];
+
+    if (sd !== UNDEFINED) {
+      if (sd !== ~~sd || sd < 1 || sd > MAX_DP) {
+        throw Error(INVALID + 'precision');
+      }
+      x = round(new Big(x), sd, rm);
+      for (; x.c.length < sd;) x.c.push(0);
+    }
+
+    return stringify(x, sd <= x.e || x.e <= Big.NE || x.e >= Big.PE, !!n);
+  };
+
+
+  /*
+   * Return a string representing the value of this Big.
+   * Return exponential notation if this Big has a positive exponent equal to or greater than
+   * Big.PE, or a negative exponent equal to or less than Big.NE.
+   * Include the sign for negative zero.
+   */
+  P.valueOf = function () {
+    var x = this,
+      Big = x.constructor;
+    if (Big.strict === true) {
+      throw Error(NAME + 'valueOf disallowed');
+    }
+    return stringify(x, x.e <= Big.NE || x.e >= Big.PE, true);
+  };
+
+
+  // Export
+
+
+  Big = _Big_();
+
+  Big['default'] = Big.Big = Big;
+
+  //AMD.
+  if (typeof define === 'function' && define.amd) {
+    define(function () { return Big; });
+
+  // Node and other CommonJS-like environments that support module.exports.
+  } else if (typeof module !== 'undefined' && module.exports) {
+    module.exports = Big;
+
+  //Browser.
+  } else {
+    GLOBAL.Big = Big;
+  }
+})(this);
+
+/* Generated from official Lohnsteuer2026 PAP XML. Load big.js first. */
+(function(root){
+'use strict';
+const B = root.Big || (typeof require === 'function' ? require('./big.js') : null);
+if (!B) throw new Error('Load big.js before engine.js');
+function gcd(a,b){while(b){let t=a%b;a=b;b=t;}return a;}
+class Decimal {
+ constructor(x){this.v=new B(x instanceof Decimal?x.v:x);}
+ add(x){return new Decimal(this.v.plus(new Decimal(x).v));}
+ subtract(x){return new Decimal(this.v.minus(new Decimal(x).v));}
+ multiply(x){return new Decimal(this.v.times(new Decimal(x).v));}
+ divide(x,scale,rounding){
+  const v=new Decimal(x).v;
+  let dp=scale;
+  if(dp===undefined){
+   function fraction(z){let s=z.toFixed(),neg=s[0]==='-';if(neg)s=s.slice(1);let parts=s.split('.');return [BigInt(parts.join(''))*(neg?-1n:1n),10n**BigInt((parts[1]||'').length)];}
+   let [a,ad]=fraction(this.v),[b,bd]=fraction(v);
+   if(b===0n)throw new Error('Division by zero');
+   let n=a*bd,d=ad*b;if(d<0n)d=-d; n=n<0n?-n:n;d/=gcd(n,d);
+   let twos=0,fives=0;while(d%2n===0n){d/=2n;twos++;}while(d%5n===0n){d/=5n;fives++;}
+   if(d!==1n)throw new Error('Non-terminating exact division');dp=Math.max(twos,fives);
+  }
+  const oldDP=B.DP,oldRM=B.RM;B.DP=dp;B.RM=rounding===0?3:0;
+  try{return new Decimal(this.v.div(v));}finally{B.DP=oldDP;B.RM=oldRM;}
+ }
+ setScale(s,r){return new Decimal(this.v.round(s,r===0?3:0));}
+ compareTo(x){return this.v.cmp(new Decimal(x).v);}
+ longValue(){return this.v.round(0,0).toFixed(0);}
+ toString(){return this.v.toFixed();}
+ toJSON(){return this.toString();}
+}
+const BigDecimal={ZERO:new Decimal('0'),ONE:new Decimal('1'),ROUND_DOWN:1,ROUND_UP:0,valueOf:x=>new Decimal(x)};
+function pap(inputs={}) {
+
+  let af = 0;
+  let AJAHR = 0;
+  let ALTER1 = 0;
+  let ALV = 0;
+  let f = 0;
+  let JFREIB = BigDecimal.ZERO;
+  let JHINZU = BigDecimal.ZERO;
+  let JRE4 = BigDecimal.ZERO;
+  let JRE4ENT = BigDecimal.ZERO;
+  let JVBEZ = BigDecimal.ZERO;
+  let KRV = 0;
+  let KVZ = BigDecimal.ZERO;
+  let LZZ = 0;
+  let LZZFREIB = BigDecimal.ZERO;
+  let LZZHINZU = BigDecimal.ZERO;
+  let MBV = BigDecimal.ZERO;
+  let PKPV = BigDecimal.ZERO;
+  let PKPVAGZ = BigDecimal.ZERO;
+  let PKV = 0;
+  let PVA = BigDecimal.ZERO;
+  let PVS = 0;
+  let PVZ = 0;
+  let R = 0;
+  let RE4 = BigDecimal.ZERO;
+  let SONSTB = BigDecimal.ZERO;
+  let SONSTENT = BigDecimal.ZERO;
+  let STERBE = BigDecimal.ZERO;
+  let STKL = 0;
+  let VBEZ = BigDecimal.ZERO;
+  let VBEZM = BigDecimal.ZERO;
+  let VBEZS = BigDecimal.ZERO;
+  let VBS = BigDecimal.ZERO;
+  let VJAHR = 0;
+  let ZKF = BigDecimal.ZERO;
+  let ZMVB = 0;
+  let BK = BigDecimal.ZERO;
+  let BKS = BigDecimal.ZERO;
+  let LSTLZZ = BigDecimal.ZERO;
+  let SOLZLZZ = BigDecimal.ZERO;
+  let SOLZS = BigDecimal.ZERO;
+  let STS = BigDecimal.ZERO;
+  let VFRB = BigDecimal.ZERO;
+  let VFRBS1 = BigDecimal.ZERO;
+  let VFRBS2 = BigDecimal.ZERO;
+  let WVFRB = BigDecimal.ZERO;
+  let WVFRBO = BigDecimal.ZERO;
+  let WVFRBM = BigDecimal.ZERO;
+  let ALTE = BigDecimal.ZERO;
+  let ANP = BigDecimal.ZERO;
+  let ANTEIL1 = BigDecimal.ZERO;
+  let AVSATZAN = BigDecimal.ZERO;
+  let BBGKVPV = BigDecimal.ZERO;
+  let BBGRVALV = BigDecimal.ZERO;
+  let BMG = BigDecimal.ZERO;
+  let DIFF = BigDecimal.ZERO;
+  let EFA = BigDecimal.ZERO;
+  let FVB = BigDecimal.ZERO;
+  let FVBSO = BigDecimal.ZERO;
+  let FVBZ = BigDecimal.ZERO;
+  let FVBZSO = BigDecimal.ZERO;
+  let GFB = BigDecimal.ZERO;
+  let HBALTE = BigDecimal.ZERO;
+  let HFVB = BigDecimal.ZERO;
+  let HFVBZ = BigDecimal.ZERO;
+  let HFVBZSO = BigDecimal.ZERO;
+  let HOCH = BigDecimal.ZERO;
+  let J = 0;
+  let JBMG = BigDecimal.ZERO;
+  let JLFREIB = BigDecimal.ZERO;
+  let JLHINZU = BigDecimal.ZERO;
+  let JW = BigDecimal.ZERO;
+  let K = 0;
+  let KFB = BigDecimal.ZERO;
+  let KVSATZAN = BigDecimal.ZERO;
+  let KZTAB = 0;
+  let LSTJAHR = BigDecimal.ZERO;
+  let LSTOSO = BigDecimal.ZERO;
+  let LSTSO = BigDecimal.ZERO;
+  let MIST = BigDecimal.ZERO;
+  let PKPVAGZJ = BigDecimal.ZERO;
+  let PVSATZAN = BigDecimal.ZERO;
+  let RVSATZAN = BigDecimal.ZERO;
+  let RW = BigDecimal.ZERO;
+  let SAP = BigDecimal.ZERO;
+  let SOLZFREI = BigDecimal.ZERO;
+  let SOLZJ = BigDecimal.ZERO;
+  let SOLZMIN = BigDecimal.ZERO;
+  let SOLZSBMG = BigDecimal.ZERO;
+  let SOLZSZVE = BigDecimal.ZERO;
+  let ST = BigDecimal.ZERO;
+  let ST1 = BigDecimal.ZERO;
+  let ST2 = BigDecimal.ZERO;
+  let VBEZB = BigDecimal.ZERO;
+  let VBEZBSO = BigDecimal.ZERO;
+  let VERGL = BigDecimal.ZERO;
+  let VSPHB = BigDecimal.ZERO;
+  let VSP = BigDecimal.ZERO;
+  let VSPN = BigDecimal.ZERO;
+  let VSPALV = BigDecimal.ZERO;
+  let VSPKVPV = BigDecimal.ZERO;
+  let VSPR = BigDecimal.ZERO;
+  let W1STKL5 = BigDecimal.ZERO;
+  let W2STKL5 = BigDecimal.ZERO;
+  let W3STKL5 = BigDecimal.ZERO;
+  let X = BigDecimal.ZERO;
+  let Y = BigDecimal.ZERO;
+  let ZRE4 = BigDecimal.ZERO;
+  let ZRE4J = BigDecimal.ZERO;
+  let ZRE4VP = BigDecimal.ZERO;
+  let ZRE4VPR = BigDecimal.ZERO;
+  let ZTABFB = BigDecimal.ZERO;
+  let ZVBEZ = BigDecimal.ZERO;
+  let ZVBEZJ = BigDecimal.ZERO;
+  let ZVE = BigDecimal.ZERO;
+  let ZX = BigDecimal.ZERO;
+  let ZZX = BigDecimal.ZERO;
+  const TAB1 = [BigDecimal.ZERO, BigDecimal.valueOf("0.4"), BigDecimal.valueOf("0.384"), BigDecimal.valueOf("0.368"), BigDecimal.valueOf("0.352"), BigDecimal.valueOf("0.336"), BigDecimal.valueOf("0.32"), BigDecimal.valueOf("0.304"), BigDecimal.valueOf("0.288"), BigDecimal.valueOf("0.272"), BigDecimal.valueOf("0.256"), BigDecimal.valueOf("0.24"), BigDecimal.valueOf("0.224"), BigDecimal.valueOf("0.208"), BigDecimal.valueOf("0.192"), BigDecimal.valueOf("0.176"), BigDecimal.valueOf("0.16"), BigDecimal.valueOf("0.152"), BigDecimal.valueOf("0.144"), BigDecimal.valueOf("0.14"), BigDecimal.valueOf("0.136"), BigDecimal.valueOf("0.132"), BigDecimal.valueOf("0.128"), BigDecimal.valueOf("0.124"), BigDecimal.valueOf("0.12"), BigDecimal.valueOf("0.116"), BigDecimal.valueOf("0.112"), BigDecimal.valueOf("0.108"), BigDecimal.valueOf("0.104"), BigDecimal.valueOf("0.1"), BigDecimal.valueOf("0.096"), BigDecimal.valueOf("0.092"), BigDecimal.valueOf("0.088"), BigDecimal.valueOf("0.084"), BigDecimal.valueOf("0.08"), BigDecimal.valueOf("0.076"), BigDecimal.valueOf("0.072"), BigDecimal.valueOf("0.068"), BigDecimal.valueOf("0.064"), BigDecimal.valueOf("0.06"), BigDecimal.valueOf("0.056"), BigDecimal.valueOf("0.052"), BigDecimal.valueOf("0.048"), BigDecimal.valueOf("0.044"), BigDecimal.valueOf("0.04"), BigDecimal.valueOf("0.036"), BigDecimal.valueOf("0.032"), BigDecimal.valueOf("0.028"), BigDecimal.valueOf("0.024"), BigDecimal.valueOf("0.02"), BigDecimal.valueOf("0.016"), BigDecimal.valueOf("0.012"), BigDecimal.valueOf("0.008"), BigDecimal.valueOf("0.004"), BigDecimal.valueOf("0")];
+  const TAB2 = [BigDecimal.ZERO, BigDecimal.valueOf("3000"), BigDecimal.valueOf("2880"), BigDecimal.valueOf("2760"), BigDecimal.valueOf("2640"), BigDecimal.valueOf("2520"), BigDecimal.valueOf("2400"), BigDecimal.valueOf("2280"), BigDecimal.valueOf("2160"), BigDecimal.valueOf("2040"), BigDecimal.valueOf("1920"), BigDecimal.valueOf("1800"), BigDecimal.valueOf("1680"), BigDecimal.valueOf("1560"), BigDecimal.valueOf("1440"), BigDecimal.valueOf("1320"), BigDecimal.valueOf("1200"), BigDecimal.valueOf("1140"), BigDecimal.valueOf("1080"), BigDecimal.valueOf("1050"), BigDecimal.valueOf("1020"), BigDecimal.valueOf("990"), BigDecimal.valueOf("960"), BigDecimal.valueOf("930"), BigDecimal.valueOf("900"), BigDecimal.valueOf("870"), BigDecimal.valueOf("840"), BigDecimal.valueOf("810"), BigDecimal.valueOf("780"), BigDecimal.valueOf("750"), BigDecimal.valueOf("720"), BigDecimal.valueOf("690"), BigDecimal.valueOf("660"), BigDecimal.valueOf("630"), BigDecimal.valueOf("600"), BigDecimal.valueOf("570"), BigDecimal.valueOf("540"), BigDecimal.valueOf("510"), BigDecimal.valueOf("480"), BigDecimal.valueOf("450"), BigDecimal.valueOf("420"), BigDecimal.valueOf("390"), BigDecimal.valueOf("360"), BigDecimal.valueOf("330"), BigDecimal.valueOf("300"), BigDecimal.valueOf("270"), BigDecimal.valueOf("240"), BigDecimal.valueOf("210"), BigDecimal.valueOf("180"), BigDecimal.valueOf("150"), BigDecimal.valueOf("120"), BigDecimal.valueOf("90"), BigDecimal.valueOf("60"), BigDecimal.valueOf("30"), BigDecimal.valueOf("0") ];
+  const TAB3 = [BigDecimal.ZERO, BigDecimal.valueOf("900"), BigDecimal.valueOf("864"), BigDecimal.valueOf("828"), BigDecimal.valueOf("792"), BigDecimal.valueOf("756"), BigDecimal.valueOf("720"), BigDecimal.valueOf("684"), BigDecimal.valueOf("648"), BigDecimal.valueOf("612"), BigDecimal.valueOf("576"), BigDecimal.valueOf("540"), BigDecimal.valueOf("504"), BigDecimal.valueOf("468"), BigDecimal.valueOf("432"), BigDecimal.valueOf("396"), BigDecimal.valueOf("360"), BigDecimal.valueOf("342"), BigDecimal.valueOf("324"), BigDecimal.valueOf("315"), BigDecimal.valueOf("306"), BigDecimal.valueOf("297"), BigDecimal.valueOf("288"), BigDecimal.valueOf("279"), BigDecimal.valueOf("270"), BigDecimal.valueOf("261"), BigDecimal.valueOf("252"), BigDecimal.valueOf("243"), BigDecimal.valueOf("234"), BigDecimal.valueOf("225"), BigDecimal.valueOf("216"), BigDecimal.valueOf("207"), BigDecimal.valueOf("198"), BigDecimal.valueOf("189"), BigDecimal.valueOf("180"), BigDecimal.valueOf("171"), BigDecimal.valueOf("162"), BigDecimal.valueOf("153"), BigDecimal.valueOf("144"), BigDecimal.valueOf("135"), BigDecimal.valueOf("126"), BigDecimal.valueOf("117"), BigDecimal.valueOf("108"), BigDecimal.valueOf("99"), BigDecimal.valueOf("90"), BigDecimal.valueOf("81"), BigDecimal.valueOf("72"), BigDecimal.valueOf("63"), BigDecimal.valueOf("54"), BigDecimal.valueOf("45"), BigDecimal.valueOf("36"), BigDecimal.valueOf("27"), BigDecimal.valueOf("18"), BigDecimal.valueOf("9"), BigDecimal.valueOf("0")];
+  const TAB4 = [BigDecimal.ZERO, BigDecimal.valueOf("0.4"), BigDecimal.valueOf("0.384"), BigDecimal.valueOf("0.368"), BigDecimal.valueOf("0.352"), BigDecimal.valueOf("0.336"), BigDecimal.valueOf("0.32"), BigDecimal.valueOf("0.304"), BigDecimal.valueOf("0.288"), BigDecimal.valueOf("0.272"), BigDecimal.valueOf("0.256"), BigDecimal.valueOf("0.24"), BigDecimal.valueOf("0.224"), BigDecimal.valueOf("0.208"), BigDecimal.valueOf("0.192"), BigDecimal.valueOf("0.176"), BigDecimal.valueOf("0.16"), BigDecimal.valueOf("0.152"), BigDecimal.valueOf("0.144"), BigDecimal.valueOf("0.14"), BigDecimal.valueOf("0.136"), BigDecimal.valueOf("0.132"), BigDecimal.valueOf("0.128"), BigDecimal.valueOf("0.124"), BigDecimal.valueOf("0.12"), BigDecimal.valueOf("0.116"), BigDecimal.valueOf("0.112"), BigDecimal.valueOf("0.108"), BigDecimal.valueOf("0.104"), BigDecimal.valueOf("0.1"), BigDecimal.valueOf("0.096"), BigDecimal.valueOf("0.092"), BigDecimal.valueOf("0.088"), BigDecimal.valueOf("0.084"), BigDecimal.valueOf("0.08"), BigDecimal.valueOf("0.076"), BigDecimal.valueOf("0.072"), BigDecimal.valueOf("0.068"), BigDecimal.valueOf("0.064"), BigDecimal.valueOf("0.06"), BigDecimal.valueOf("0.056"), BigDecimal.valueOf("0.052"), BigDecimal.valueOf("0.048"), BigDecimal.valueOf("0.044"), BigDecimal.valueOf("0.04"), BigDecimal.valueOf("0.036"), BigDecimal.valueOf("0.032"), BigDecimal.valueOf("0.028"), BigDecimal.valueOf("0.024"), BigDecimal.valueOf("0.02"), BigDecimal.valueOf("0.016"), BigDecimal.valueOf("0.012"), BigDecimal.valueOf("0.008"), BigDecimal.valueOf("0.004"), BigDecimal.valueOf("0")];
+  const TAB5 = [BigDecimal.ZERO, BigDecimal.valueOf("1900"), BigDecimal.valueOf("1824"), BigDecimal.valueOf("1748"), BigDecimal.valueOf("1672"), BigDecimal.valueOf("1596"), BigDecimal.valueOf("1520"), BigDecimal.valueOf("1444"), BigDecimal.valueOf("1368"), BigDecimal.valueOf("1292"), BigDecimal.valueOf("1216"), BigDecimal.valueOf("1140"), BigDecimal.valueOf("1064"), BigDecimal.valueOf("988"), BigDecimal.valueOf("912"), BigDecimal.valueOf("836"), BigDecimal.valueOf("760"), BigDecimal.valueOf("722"), BigDecimal.valueOf("684"), BigDecimal.valueOf("665"), BigDecimal.valueOf("646"), BigDecimal.valueOf("627"), BigDecimal.valueOf("608"), BigDecimal.valueOf("589"), BigDecimal.valueOf("570"), BigDecimal.valueOf("551"), BigDecimal.valueOf("532"), BigDecimal.valueOf("513"), BigDecimal.valueOf("494"), BigDecimal.valueOf("475"), BigDecimal.valueOf("456"), BigDecimal.valueOf("437"), BigDecimal.valueOf("418"), BigDecimal.valueOf("399"), BigDecimal.valueOf("380"), BigDecimal.valueOf("361"), BigDecimal.valueOf("342"), BigDecimal.valueOf("323"), BigDecimal.valueOf("304"), BigDecimal.valueOf("285"), BigDecimal.valueOf("266"), BigDecimal.valueOf("247"), BigDecimal.valueOf("228"), BigDecimal.valueOf("209"), BigDecimal.valueOf("190"), BigDecimal.valueOf("171"), BigDecimal.valueOf("152"), BigDecimal.valueOf("133"), BigDecimal.valueOf("114"), BigDecimal.valueOf("95"), BigDecimal.valueOf("76"), BigDecimal.valueOf("57"), BigDecimal.valueOf("38"), BigDecimal.valueOf("19"), BigDecimal.valueOf("0")];
+  const ZAHL1 = BigDecimal.ONE;
+  const ZAHL2 = BigDecimal.valueOf("2");
+  const ZAHL5 = BigDecimal.valueOf("5");
+  const ZAHL7 = BigDecimal.valueOf("7");
+  const ZAHL12 = BigDecimal.valueOf("12");
+  const ZAHL100 = BigDecimal.valueOf("100");
+  const ZAHL360 = BigDecimal.valueOf("360");
+  const ZAHL500 = BigDecimal.valueOf("500");
+  const ZAHL700 = BigDecimal.valueOf("700");
+  const ZAHL1000 = BigDecimal.valueOf("1000");
+  const ZAHL10000 = BigDecimal.valueOf("10000");
+  if (inputs.af !== undefined && inputs.af !== null) af = Number(inputs.af);
+  if (inputs.AJAHR !== undefined && inputs.AJAHR !== null) AJAHR = Number(inputs.AJAHR);
+  if (inputs.ALTER1 !== undefined && inputs.ALTER1 !== null) ALTER1 = Number(inputs.ALTER1);
+  if (inputs.ALV !== undefined && inputs.ALV !== null) ALV = Number(inputs.ALV);
+  if (inputs.f !== undefined && inputs.f !== null) f = Number(inputs.f);
+  if (inputs.JFREIB !== undefined && inputs.JFREIB !== null) JFREIB = BigDecimal.valueOf(inputs.JFREIB);
+  if (inputs.JHINZU !== undefined && inputs.JHINZU !== null) JHINZU = BigDecimal.valueOf(inputs.JHINZU);
+  if (inputs.JRE4 !== undefined && inputs.JRE4 !== null) JRE4 = BigDecimal.valueOf(inputs.JRE4);
+  if (inputs.JRE4ENT !== undefined && inputs.JRE4ENT !== null) JRE4ENT = BigDecimal.valueOf(inputs.JRE4ENT);
+  if (inputs.JVBEZ !== undefined && inputs.JVBEZ !== null) JVBEZ = BigDecimal.valueOf(inputs.JVBEZ);
+  if (inputs.KRV !== undefined && inputs.KRV !== null) KRV = Number(inputs.KRV);
+  if (inputs.KVZ !== undefined && inputs.KVZ !== null) KVZ = BigDecimal.valueOf(inputs.KVZ);
+  if (inputs.LZZ !== undefined && inputs.LZZ !== null) LZZ = Number(inputs.LZZ);
+  if (inputs.LZZFREIB !== undefined && inputs.LZZFREIB !== null) LZZFREIB = BigDecimal.valueOf(inputs.LZZFREIB);
+  if (inputs.LZZHINZU !== undefined && inputs.LZZHINZU !== null) LZZHINZU = BigDecimal.valueOf(inputs.LZZHINZU);
+  if (inputs.MBV !== undefined && inputs.MBV !== null) MBV = BigDecimal.valueOf(inputs.MBV);
+  if (inputs.PKPV !== undefined && inputs.PKPV !== null) PKPV = BigDecimal.valueOf(inputs.PKPV);
+  if (inputs.PKPVAGZ !== undefined && inputs.PKPVAGZ !== null) PKPVAGZ = BigDecimal.valueOf(inputs.PKPVAGZ);
+  if (inputs.PKV !== undefined && inputs.PKV !== null) PKV = Number(inputs.PKV);
+  if (inputs.PVA !== undefined && inputs.PVA !== null) PVA = BigDecimal.valueOf(inputs.PVA);
+  if (inputs.PVS !== undefined && inputs.PVS !== null) PVS = Number(inputs.PVS);
+  if (inputs.PVZ !== undefined && inputs.PVZ !== null) PVZ = Number(inputs.PVZ);
+  if (inputs.R !== undefined && inputs.R !== null) R = Number(inputs.R);
+  if (inputs.RE4 !== undefined && inputs.RE4 !== null) RE4 = BigDecimal.valueOf(inputs.RE4);
+  if (inputs.SONSTB !== undefined && inputs.SONSTB !== null) SONSTB = BigDecimal.valueOf(inputs.SONSTB);
+  if (inputs.SONSTENT !== undefined && inputs.SONSTENT !== null) SONSTENT = BigDecimal.valueOf(inputs.SONSTENT);
+  if (inputs.STERBE !== undefined && inputs.STERBE !== null) STERBE = BigDecimal.valueOf(inputs.STERBE);
+  if (inputs.STKL !== undefined && inputs.STKL !== null) STKL = Number(inputs.STKL);
+  if (inputs.VBEZ !== undefined && inputs.VBEZ !== null) VBEZ = BigDecimal.valueOf(inputs.VBEZ);
+  if (inputs.VBEZM !== undefined && inputs.VBEZM !== null) VBEZM = BigDecimal.valueOf(inputs.VBEZM);
+  if (inputs.VBEZS !== undefined && inputs.VBEZS !== null) VBEZS = BigDecimal.valueOf(inputs.VBEZS);
+  if (inputs.VBS !== undefined && inputs.VBS !== null) VBS = BigDecimal.valueOf(inputs.VBS);
+  if (inputs.VJAHR !== undefined && inputs.VJAHR !== null) VJAHR = Number(inputs.VJAHR);
+  if (inputs.ZKF !== undefined && inputs.ZKF !== null) ZKF = BigDecimal.valueOf(inputs.ZKF);
+  if (inputs.ZMVB !== undefined && inputs.ZMVB !== null) ZMVB = Number(inputs.ZMVB);
+  function MPARA() {
+    BBGRVALV = BigDecimal.valueOf("101400");
+    AVSATZAN = BigDecimal.valueOf("0.013");
+    RVSATZAN = BigDecimal.valueOf("0.093");
+    BBGKVPV = BigDecimal.valueOf("69750");
+    KVSATZAN = (KVZ.divide(ZAHL2).divide(ZAHL100)).add(BigDecimal.valueOf("0.07"));
+    if (PVS == 1) {
+      PVSATZAN = BigDecimal.valueOf("0.023");
+    } else {
+      PVSATZAN =  BigDecimal.valueOf("0.018");
+    }
+    if (PVZ == 1) {
+      PVSATZAN = PVSATZAN.add(BigDecimal.valueOf("0.006"));
+    } else {
+      PVSATZAN = PVSATZAN.subtract(PVA.multiply(BigDecimal.valueOf("0.0025")));
+    }
+    W1STKL5 = BigDecimal.valueOf("14071");
+    W2STKL5 = BigDecimal.valueOf("34939");
+    W3STKL5 = BigDecimal.valueOf("222260");
+    GFB = BigDecimal.valueOf("12348");
+    SOLZFREI = BigDecimal.valueOf("20350");
+  }
+  function MRE4JL() {
+    if (LZZ == 1) {
+      ZRE4J= RE4.divide (ZAHL100, 2, BigDecimal.ROUND_DOWN);
+      ZVBEZJ= VBEZ.divide (ZAHL100, 2, BigDecimal.ROUND_DOWN);
+      JLFREIB= LZZFREIB.divide (ZAHL100, 2, BigDecimal.ROUND_DOWN);
+      JLHINZU= LZZHINZU.divide (ZAHL100, 2, BigDecimal.ROUND_DOWN);
+    } else {
+      if (LZZ == 2) {
+        ZRE4J= (RE4.multiply (ZAHL12)).divide (ZAHL100, 2, BigDecimal.ROUND_DOWN);
+        ZVBEZJ= (VBEZ.multiply (ZAHL12)).divide (ZAHL100, 2, BigDecimal.ROUND_DOWN);
+        JLFREIB= (LZZFREIB.multiply (ZAHL12)).divide (ZAHL100, 2, BigDecimal.ROUND_DOWN);
+        JLHINZU= (LZZHINZU.multiply (ZAHL12)).divide (ZAHL100, 2, BigDecimal.ROUND_DOWN);
+      } else {
+        if (LZZ == 3) {
+          ZRE4J= (RE4.multiply (ZAHL360)).divide (ZAHL700, 2, BigDecimal.ROUND_DOWN);
+          ZVBEZJ= (VBEZ.multiply (ZAHL360)).divide (ZAHL700, 2, BigDecimal.ROUND_DOWN);
+          JLFREIB= (LZZFREIB.multiply (ZAHL360)).divide (ZAHL700, 2, BigDecimal.ROUND_DOWN);
+          JLHINZU= (LZZHINZU.multiply (ZAHL360)).divide (ZAHL700, 2, BigDecimal.ROUND_DOWN);
+        } else {
+          ZRE4J= (RE4.multiply (ZAHL360)).divide (ZAHL100, 2, BigDecimal.ROUND_DOWN);
+          ZVBEZJ= (VBEZ.multiply (ZAHL360)).divide (ZAHL100, 2, BigDecimal.ROUND_DOWN);
+          JLFREIB= (LZZFREIB.multiply (ZAHL360)).divide (ZAHL100, 2, BigDecimal.ROUND_DOWN);
+          JLHINZU= (LZZHINZU.multiply (ZAHL360)).divide (ZAHL100, 2, BigDecimal.ROUND_DOWN);
+        }
+      }
+    }
+    if (af == 0) {
+      f= 1;
+    }
+  }
+  function MRE4() {
+    if (ZVBEZJ.compareTo (BigDecimal.ZERO) == 0) {
+      FVBZ= BigDecimal.ZERO;
+      FVB= BigDecimal.ZERO;
+      FVBZSO= BigDecimal.ZERO;
+      FVBSO= BigDecimal.ZERO;
+    } else {
+      if (VJAHR < 2006) {
+        J= 1;
+      } else {
+        if (VJAHR < 2058) {
+          J= VJAHR - 2004;
+        } else {
+          J= 54;
+        }
+      }
+      if (LZZ == 1) {
+        VBEZB= (VBEZM.multiply (BigDecimal.valueOf(ZMVB))).add (VBEZS);
+        HFVB= TAB2[J].divide (ZAHL12).multiply (BigDecimal.valueOf(ZMVB)).setScale (0, BigDecimal.ROUND_UP);
+        FVBZ= TAB3[J].divide (ZAHL12).multiply (BigDecimal.valueOf(ZMVB)).setScale (0, BigDecimal.ROUND_UP);
+      } else {
+        VBEZB= ((VBEZM.multiply (ZAHL12)).add (VBEZS)).setScale (2, BigDecimal.ROUND_DOWN);
+        HFVB= TAB2[J];
+        FVBZ= TAB3[J];
+      }
+      FVB= ((VBEZB.multiply (TAB1[J]))).divide (ZAHL100).setScale (2, BigDecimal.ROUND_UP);
+      if (FVB.compareTo (HFVB) == 1) {
+        FVB = HFVB;
+      }
+      if (FVB.compareTo (ZVBEZJ) == 1) {
+        FVB = ZVBEZJ;
+      }
+      FVBSO= (FVB.add((VBEZBSO.multiply (TAB1[J])).divide (ZAHL100))).setScale (2, BigDecimal.ROUND_UP);
+      if (FVBSO.compareTo (TAB2[J]) == 1) {
+        FVBSO = TAB2[J];
+      }
+      HFVBZSO= (((VBEZB.add(VBEZBSO)).divide (ZAHL100)).subtract (FVBSO)).setScale (2, BigDecimal.ROUND_DOWN);
+      FVBZSO= (FVBZ.add((VBEZBSO).divide (ZAHL100))).setScale (0, BigDecimal.ROUND_UP);
+      if (FVBZSO.compareTo (HFVBZSO) == 1) {
+        FVBZSO = HFVBZSO.setScale(0, BigDecimal.ROUND_UP);
+      }
+      if (FVBZSO.compareTo (TAB3[J]) == 1) {
+        FVBZSO = TAB3[J];
+      }
+      HFVBZ= ((VBEZB.divide (ZAHL100)).subtract (FVB)).setScale (2, BigDecimal.ROUND_DOWN);
+      if (FVBZ.compareTo (HFVBZ) == 1) {
+        FVBZ = HFVBZ.setScale (0, BigDecimal.ROUND_UP);
+      }
+    }
+    MRE4ALTE();
+  }
+  function MRE4ALTE() {
+    if (ALTER1 == 0) {
+      ALTE= BigDecimal.ZERO;
+    } else {
+      if (AJAHR < 2006) {
+        K= 1;
+      } else {
+        if (AJAHR < 2058) {
+          K= AJAHR - 2004;
+        } else {
+          K= 54;
+        }
+      }
+      BMG= ZRE4J.subtract (ZVBEZJ);
+      ALTE = (BMG.multiply(TAB4[K])).setScale(0, BigDecimal.ROUND_UP);
+      HBALTE= TAB5[K];
+      if (ALTE.compareTo (HBALTE) == 1) {
+        ALTE= HBALTE;
+      }
+    }
+  }
+  function MRE4ABZ() {
+    ZRE4= (ZRE4J.subtract (FVB).subtract   (ALTE).subtract (JLFREIB).add (JLHINZU)).setScale (2, BigDecimal.ROUND_DOWN);
+    if (ZRE4.compareTo (BigDecimal.ZERO) == -1) {
+      ZRE4= BigDecimal.ZERO;
+    }
+    ZRE4VP= ZRE4J;
+    ZVBEZ = ZVBEZJ.subtract(FVB).setScale(2, BigDecimal.ROUND_DOWN);
+    if (ZVBEZ.compareTo(BigDecimal.ZERO) == -1) {
+      ZVBEZ = BigDecimal.ZERO;
+    }
+  }
+  function MBERECH() {
+    MZTABFB();
+    VFRB = ((ANP.add(FVB.add(FVBZ))).multiply(ZAHL100)).setScale(0, BigDecimal.ROUND_DOWN);
+    MLSTJAHR();
+    WVFRB = ((ZVE.subtract(GFB)).multiply(ZAHL100)).setScale(0, BigDecimal.ROUND_DOWN);
+    if (WVFRB.compareTo(BigDecimal.ZERO) == -1) {
+      WVFRB = BigDecimal.ZERO;
+    }
+    LSTJAHR = (ST.multiply(BigDecimal.valueOf(f))).setScale(0,BigDecimal.ROUND_DOWN);
+    UPLSTLZZ();
+    if (ZKF.compareTo(BigDecimal.ZERO) == 1) {
+      ZTABFB = ZTABFB.add(KFB);
+      MRE4ABZ();
+      MLSTJAHR();
+      JBMG = (ST.multiply(BigDecimal.valueOf(f))).setScale(0,BigDecimal.ROUND_DOWN);
+    } else {
+      JBMG = LSTJAHR;
+    }
+    MSOLZ();
+  }
+  function MZTABFB() {
+    ANP= BigDecimal.ZERO;
+    if (ZVBEZ.compareTo (BigDecimal.ZERO) >= 0 && ZVBEZ.compareTo(FVBZ) == -1) {
+      FVBZ = BigDecimal.valueOf(ZVBEZ.longValue());
+    }
+    if (STKL < 6) {
+      if (ZVBEZ.compareTo (BigDecimal.ZERO) == 1) {
+        if ((ZVBEZ.subtract (FVBZ)).compareTo (BigDecimal.valueOf("102")) == -1) {
+          ANP= (ZVBEZ.subtract (FVBZ)).setScale (0, BigDecimal.ROUND_UP);
+        } else {
+          ANP= BigDecimal.valueOf("102");
+        }
+      }
+    } else {
+      FVBZ= BigDecimal.ZERO;
+      FVBZSO= BigDecimal.ZERO;
+    }
+    if (STKL < 6) {
+      if (ZRE4.compareTo(ZVBEZ) == 1) {
+        if (ZRE4.subtract(ZVBEZ).compareTo(BigDecimal.valueOf("1230")) == -1) {
+          ANP = ANP.add(ZRE4).subtract(ZVBEZ).setScale(0,BigDecimal.ROUND_UP);
+        } else {
+          ANP = ANP.add(BigDecimal.valueOf("1230"));
+        }
+      }
+    }
+    KZTAB= 1;
+    if (STKL == 1) {
+      SAP= BigDecimal.valueOf("36");
+      KFB= (ZKF.multiply (BigDecimal.valueOf("9756"))).setScale (0, BigDecimal.ROUND_DOWN);
+    } else {
+      if (STKL == 2) {
+        EFA= BigDecimal.valueOf("4260");
+        SAP= BigDecimal.valueOf("36");
+        KFB= (ZKF.multiply (BigDecimal.valueOf("9756"))).setScale (0, BigDecimal.ROUND_DOWN);
+      } else {
+        if (STKL == 3) {
+          KZTAB= 2;
+          SAP= BigDecimal.valueOf("36");
+          KFB= (ZKF.multiply (BigDecimal.valueOf("9756"))).setScale (0, BigDecimal.ROUND_DOWN);
+        } else {
+          if (STKL == 4) {
+            SAP= BigDecimal.valueOf("36");
+            KFB= (ZKF.multiply (BigDecimal.valueOf("4878"))).setScale (0, BigDecimal.ROUND_DOWN);
+          } else {
+            if (STKL == 5) {
+              SAP= BigDecimal.valueOf("36");
+              KFB= BigDecimal.ZERO;
+            } else {
+              KFB= BigDecimal.ZERO;
+            }
+          }
+        }
+      }
+    }
+    ZTABFB= (EFA.add (ANP).add (SAP).add (FVBZ)).setScale (2, BigDecimal.ROUND_DOWN);
+  }
+  function MLSTJAHR() {
+    UPEVP();
+    ZVE= ZRE4.subtract (ZTABFB).subtract(VSP);
+    UPMLST();
+  }
+  function UPLSTLZZ() {
+    JW = LSTJAHR.multiply(ZAHL100);
+    UPANTEIL();
+    LSTLZZ = ANTEIL1;
+  }
+  function UPMLST() {
+    if (ZVE.compareTo (ZAHL1) == -1) {
+      ZVE= BigDecimal.ZERO;
+      X= BigDecimal.ZERO;
+    } else {
+      X= (ZVE.divide (BigDecimal.valueOf(KZTAB))).setScale (0, BigDecimal.ROUND_DOWN);
+    }
+    if (STKL < 5) {
+      UPTAB26();
+    } else {
+      MST5_6();
+    }
+  }
+  function UPEVP() {
+    if (KRV == 1) {
+      VSPR = BigDecimal.ZERO;
+    } else {
+      if (ZRE4VP.compareTo(BBGRVALV) == 1) {
+        ZRE4VPR = BBGRVALV;
+      } else {
+        ZRE4VPR = ZRE4VP;
+      }
+      VSPR = (ZRE4VPR.multiply(RVSATZAN)).setScale(2,BigDecimal.ROUND_DOWN);
+    }
+    MVSPKVPV();
+    if (ALV == 1) {
+    } else {
+      if (STKL == 6) {
+      } else {
+        MVSPHB();
+      }
+    }
+  }
+  function MVSPKVPV() {
+    if (ZRE4VP.compareTo(BBGKVPV) == 1) {
+      ZRE4VPR = BBGKVPV;
+    } else {
+      ZRE4VPR = ZRE4VP;
+    }
+    if (PKV > 0) {
+      if (STKL == 6) {
+        VSPKVPV = BigDecimal.ZERO;
+      } else {
+        PKPVAGZJ = PKPVAGZ.multiply(ZAHL12).divide(ZAHL100).setScale(2,BigDecimal.ROUND_DOWN);
+        VSPKVPV = PKPV.multiply(ZAHL12).divide(ZAHL100).setScale(2, BigDecimal.ROUND_DOWN);
+        VSPKVPV = VSPKVPV.subtract(PKPVAGZJ);
+        if (VSPKVPV.compareTo(BigDecimal.ZERO) == -1) {
+          VSPKVPV = BigDecimal.ZERO;
+        }
+      }
+    } else {
+      VSPKVPV = ZRE4VPR.multiply(KVSATZAN.add(PVSATZAN)).setScale(2, BigDecimal.ROUND_DOWN);
+    }
+    VSP = VSPKVPV.add(VSPR).setScale(0, BigDecimal.ROUND_UP);
+  }
+  function MVSPHB() {
+    if (ZRE4VP.compareTo(BBGRVALV) == 1) {
+      ZRE4VPR = BBGRVALV;
+    } else {
+      ZRE4VPR = ZRE4VP;
+    }
+    VSPALV = AVSATZAN.multiply(ZRE4VPR).setScale(2, BigDecimal.ROUND_DOWN);
+    VSPHB = VSPALV.add(VSPKVPV).setScale(2, BigDecimal.ROUND_DOWN);
+    if (VSPHB.compareTo(BigDecimal.valueOf("1900")) == 1) {
+      VSPHB = BigDecimal.valueOf("1900");
+    }
+    VSPN = VSPR.add(VSPHB).setScale(0, BigDecimal.ROUND_UP);
+    if (VSPN.compareTo(VSP) == 1) {
+      VSP = VSPN;
+    }
+  }
+  function MST5_6() {
+    ZZX= X;
+    if (ZZX.compareTo(W2STKL5) == 1) {
+      ZX= W2STKL5;
+      UP5_6();
+      if (ZZX.compareTo (W3STKL5) == 1) {
+        ST= (ST.add ((W3STKL5.subtract (W2STKL5)).multiply (BigDecimal.valueOf("0.42")))).setScale (0, BigDecimal.ROUND_DOWN);
+        ST= (ST.add ((ZZX.subtract (W3STKL5)).multiply (BigDecimal.valueOf("0.45")))).setScale (0, BigDecimal.ROUND_DOWN);
+      } else {
+        ST= (ST.add ((ZZX.subtract (W2STKL5)).multiply (BigDecimal.valueOf("0.42")))).setScale (0, BigDecimal.ROUND_DOWN);
+      }
+    } else {
+      ZX= ZZX;
+      UP5_6();
+      if (ZZX.compareTo (W1STKL5) == 1) {
+        VERGL= ST;
+        ZX= W1STKL5;
+        UP5_6();
+        HOCH= (ST.add ((ZZX.subtract (W1STKL5)).multiply (BigDecimal.valueOf("0.42")))).setScale (0, BigDecimal.ROUND_DOWN);
+        if (HOCH.compareTo (VERGL) == -1) {
+          ST= HOCH;
+        } else {
+          ST= VERGL;
+        }
+      }
+    }
+  }
+  function UP5_6() {
+    X= (ZX.multiply (BigDecimal.valueOf("1.25"))).setScale (0, BigDecimal.ROUND_DOWN);
+    UPTAB26();
+    ST1= ST;
+    X= (ZX.multiply (BigDecimal.valueOf("0.75"))).setScale (0, BigDecimal.ROUND_DOWN);
+    UPTAB26();
+    ST2= ST;
+    DIFF= (ST1.subtract (ST2)).multiply (ZAHL2);
+    MIST= (ZX.multiply (BigDecimal.valueOf("0.14"))).setScale (0, BigDecimal.ROUND_DOWN);
+    if (MIST.compareTo (DIFF) == 1) {
+      ST= MIST;
+    } else {
+      ST= DIFF;
+    }
+  }
+  function MSOLZ() {
+    SOLZFREI = (SOLZFREI.multiply(BigDecimal.valueOf(KZTAB)));
+    if (JBMG.compareTo (SOLZFREI) == 1) {
+      SOLZJ= (JBMG.multiply (BigDecimal.valueOf("5.5"))).divide(ZAHL100).setScale(2, BigDecimal.ROUND_DOWN);
+      SOLZMIN= (JBMG.subtract (SOLZFREI)).multiply (BigDecimal.valueOf("11.9")).divide (ZAHL100).setScale (2, BigDecimal.ROUND_DOWN);
+      if (SOLZMIN.compareTo (SOLZJ) == -1) {
+        SOLZJ= SOLZMIN;
+      }
+      JW= SOLZJ.multiply (ZAHL100).setScale (0, BigDecimal.ROUND_DOWN);
+      UPANTEIL();
+      SOLZLZZ= ANTEIL1;
+    } else {
+      SOLZLZZ= BigDecimal.ZERO;
+    }
+    if (R > 0) {
+      JW= JBMG.multiply (ZAHL100);
+      UPANTEIL();
+      BK= ANTEIL1;
+    } else {
+      BK= BigDecimal.ZERO;
+    }
+  }
+  function UPANTEIL() {
+    if (LZZ == 1) {
+      ANTEIL1= JW;
+    } else {
+      if (LZZ == 2) {
+        ANTEIL1= JW.divide (ZAHL12, 0, BigDecimal.ROUND_DOWN);
+      } else {
+        if (LZZ == 3) {
+          ANTEIL1= (JW.multiply (ZAHL7)).divide (ZAHL360, 0, BigDecimal.ROUND_DOWN);
+        } else {
+          ANTEIL1= JW.divide (ZAHL360, 0, BigDecimal.ROUND_DOWN);
+        }
+      }
+    }
+  }
+  function MSONST() {
+    LZZ = 1;
+    if (ZMVB == 0) {
+      ZMVB = 12;
+    }
+    if (SONSTB.compareTo (BigDecimal.ZERO) == 0 && MBV.compareTo (BigDecimal.ZERO) == 0) {
+      LSTSO= BigDecimal.ZERO;
+      STS= BigDecimal.ZERO;
+      SOLZS= BigDecimal.ZERO;
+      BKS= BigDecimal.ZERO;
+    } else {
+      MOSONST();
+      ZRE4J= ((JRE4.add (SONSTB)).divide (ZAHL100)).setScale (2, BigDecimal.ROUND_DOWN);
+      ZVBEZJ= ((JVBEZ.add (VBS)).divide (ZAHL100)).setScale (2, BigDecimal.ROUND_DOWN);
+      VBEZBSO= STERBE;
+      MRE4SONST();
+      MLSTJAHR();
+      WVFRBM = (ZVE.subtract(GFB)).multiply(ZAHL100).setScale(2,BigDecimal.ROUND_DOWN);
+      if (WVFRBM.compareTo(BigDecimal.ZERO) == -1) {
+        WVFRBM = BigDecimal.ZERO;
+      }
+      LSTSO= ST.multiply (ZAHL100);
+      STS = LSTSO.subtract(LSTOSO).multiply(BigDecimal.valueOf(f)).divide(ZAHL100, 0, BigDecimal.ROUND_DOWN).multiply(ZAHL100);
+      STSMIN();
+    }
+  }
+  function STSMIN() {
+    if (STS.compareTo(BigDecimal.ZERO) == -1) {
+      if (MBV.compareTo(BigDecimal.ZERO) == 0) {
+      } else {
+        LSTLZZ = LSTLZZ.add(STS);
+        if (LSTLZZ.compareTo(BigDecimal.ZERO) == -1) {
+          LSTLZZ = BigDecimal.ZERO;
+        }
+        SOLZLZZ = SOLZLZZ.add(STS.multiply(BigDecimal.valueOf("5.5").divide(ZAHL100))).setScale(0, BigDecimal.ROUND_DOWN);
+        if (SOLZLZZ.compareTo(BigDecimal.ZERO) == -1) {
+          SOLZLZZ = BigDecimal.ZERO;
+        }
+        BK = BK.add(STS);
+        if (BK.compareTo(BigDecimal.ZERO) == -1) {
+          BK = BigDecimal.ZERO;
+        }
+      }
+      STS = BigDecimal.ZERO;
+      SOLZS = BigDecimal.ZERO;
+    } else {
+      MSOLZSTS();
+    }
+    if (R > 0) {
+      BKS = STS;
+    } else {
+      BKS = BigDecimal.ZERO;
+    }
+  }
+  function MSOLZSTS() {
+    if (ZKF.compareTo(BigDecimal.ZERO) == 1) {
+      SOLZSZVE= ZVE.subtract(KFB);
+    } else {
+      SOLZSZVE= ZVE;
+    }
+    if (SOLZSZVE.compareTo(BigDecimal.ONE) == -1) {
+      SOLZSZVE= BigDecimal.ZERO;
+      X= BigDecimal.ZERO;
+    } else {
+      X= SOLZSZVE.divide(BigDecimal.valueOf(KZTAB), 0, BigDecimal.ROUND_DOWN);
+    }
+    if (STKL < 5) {
+      UPTAB26();
+    } else {
+      MST5_6();
+    }
+    SOLZSBMG= ST.multiply(BigDecimal.valueOf(f)).setScale(0,BigDecimal.ROUND_DOWN);
+    if (SOLZSBMG.compareTo(SOLZFREI) == 1) {
+      SOLZS= STS.multiply(BigDecimal.valueOf("5.5")).divide(ZAHL100, 0, BigDecimal.ROUND_DOWN);
+    } else {
+      SOLZS= BigDecimal.ZERO;
+    }
+  }
+  function MOSONST() {
+    ZRE4J= (JRE4.divide (ZAHL100)).setScale (2, BigDecimal.ROUND_DOWN);
+    ZVBEZJ= (JVBEZ.divide (ZAHL100)).setScale (2, BigDecimal.ROUND_DOWN);
+    JLFREIB= JFREIB.divide (ZAHL100, 2, BigDecimal.ROUND_DOWN);
+    JLHINZU= JHINZU.divide (ZAHL100, 2, BigDecimal.ROUND_DOWN);
+    MRE4();
+    MRE4ABZ();
+    ZRE4VP = ZRE4VP.subtract(JRE4ENT.divide(ZAHL100));
+    MZTABFB();
+    VFRBS1 = ((ANP.add(FVB.add(FVBZ))).multiply(ZAHL100)).setScale(2,BigDecimal.ROUND_DOWN);
+    MLSTJAHR();
+    WVFRBO = ((ZVE.subtract(GFB)).multiply(ZAHL100)).setScale(2, BigDecimal.ROUND_DOWN);
+    if (WVFRBO.compareTo(BigDecimal.ZERO) == -1 ) {
+      WVFRBO = BigDecimal.ZERO;
+    }
+    LSTOSO= ST.multiply (ZAHL100);
+  }
+  function MRE4SONST() {
+    MRE4();
+    FVB= FVBSO;
+    MRE4ABZ();
+    ZRE4VP = ZRE4VP.add(MBV.divide(ZAHL100)).subtract(JRE4ENT.divide(ZAHL100)).subtract(SONSTENT.divide(ZAHL100));
+    FVBZ= FVBZSO;
+    MZTABFB();
+    VFRBS2 = ((((ANP.add(FVB).add(FVBZ))).multiply(ZAHL100))).subtract(VFRBS1);
+  }
+  function UPTAB26() {
+    if (X.compareTo(GFB.add(ZAHL1)) == -1) {
+      ST= BigDecimal.ZERO;
+    } else {
+      if (X.compareTo (BigDecimal.valueOf("17800")) == -1) {
+        Y = (X.subtract(GFB)).divide(ZAHL10000, 6,BigDecimal.ROUND_DOWN);
+        RW= Y.multiply (BigDecimal.valueOf("914.51"));
+        RW= RW.add (BigDecimal.valueOf("1400"));
+        ST= (RW.multiply (Y)).setScale (0, BigDecimal.ROUND_DOWN);
+      } else {
+        if (X.compareTo (BigDecimal.valueOf("69879")) == -1) {
+          Y= (X.subtract (BigDecimal.valueOf("17799"))).divide (ZAHL10000, 6, BigDecimal.ROUND_DOWN);
+          RW= Y.multiply (BigDecimal.valueOf("173.1"));
+          RW= RW.add (BigDecimal.valueOf("2397"));
+          RW= RW.multiply (Y);
+          ST= (RW.add (BigDecimal.valueOf("1034.87"))).setScale (0, BigDecimal.ROUND_DOWN);
+        } else {
+          if (X.compareTo (BigDecimal.valueOf("277826")) == -1) {
+            ST= ((X.multiply (BigDecimal.valueOf("0.42"))).subtract (BigDecimal.valueOf("11135.63"))).setScale (0, BigDecimal.ROUND_DOWN);
+          } else {
+            ST= ((X.multiply (BigDecimal.valueOf("0.45"))).subtract (BigDecimal.valueOf("19470.38"))).setScale (0, BigDecimal.ROUND_DOWN);
+          }
+        }
+      }
+    }
+    ST= ST.multiply (BigDecimal.valueOf(KZTAB));
+  }
+  MPARA();
+  MRE4JL();
+  VBEZBSO= BigDecimal.ZERO;
+  MRE4();
+  MRE4ABZ();
+  MBERECH();
+  MSONST();
+  const result = {af, AJAHR, ALTER1, ALV, f, JFREIB, JHINZU, JRE4, JRE4ENT, JVBEZ, KRV, KVZ, LZZ, LZZFREIB, LZZHINZU, MBV, PKPV, PKPVAGZ, PKV, PVA, PVS, PVZ, R, RE4, SONSTB, SONSTENT, STERBE, STKL, VBEZ, VBEZM, VBEZS, VBS, VJAHR, ZKF, ZMVB, BK, BKS, LSTLZZ, SOLZLZZ, SOLZS, STS, VFRB, VFRBS1, VFRBS2, WVFRB, WVFRBO, WVFRBM, ALTE, ANP, ANTEIL1, AVSATZAN, BBGKVPV, BBGRVALV, BMG, DIFF, EFA, FVB, FVBSO, FVBZ, FVBZSO, GFB, HBALTE, HFVB, HFVBZ, HFVBZSO, HOCH, J, JBMG, JLFREIB, JLHINZU, JW, K, KFB, KVSATZAN, KZTAB, LSTJAHR, LSTOSO, LSTSO, MIST, PKPVAGZJ, PVSATZAN, RVSATZAN, RW, SAP, SOLZFREI, SOLZJ, SOLZMIN, SOLZSBMG, SOLZSZVE, ST, ST1, ST2, VBEZB, VBEZBSO, VERGL, VSPHB, VSP, VSPN, VSPALV, VSPKVPV, VSPR, W1STKL5, W2STKL5, W3STKL5, X, Y, ZRE4, ZRE4J, ZRE4VP, ZRE4VPR, ZTABFB, ZVBEZ, ZVBEZJ, ZVE, ZX, ZZX};
+  for (const k of Object.keys(result)) if (result[k] instanceof Decimal) result[k] = result[k].toString();
+  return result;
+}
+root.pap=pap; if(typeof module!=="undefined") module.exports={pap,Decimal};
+})(typeof globalThis!=="undefined"?globalThis:this);
+</script><script>
+const $=id=>document.getElementById(id), money=n=>Number(n).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});
+function cents(n){return Number(new Big(n).times(100).round(0,1))}function contribution(base,rate){return Number(new Big(base).times(rate).times(100).round(0,1))}
+function calculate(z){let raw=$('gross').value, g=$('basis').value==='year'?new Big(raw).div(12):new Big(raw);g=g.round(2,1);const gross=cents(g),parent=$('parent').value==='1',n=Number($('children').value),birth=$('birth').value,klass=Number($('klass').value),kvz=Number($('kvz').value),born=Number(birth.slice(0,4));if(!parent&&n>0)throw Error('无子女身份与子女人数冲突，请确认。');if(born<=1961)throw Error('出生年份涉及年龄减免／退休边界，超出本版支持范围。');if(!parent&&born===2003)throw Error('当年满 23 岁：需逐月处理护理附加费，本版不支持。');if(born>2010)throw Error('本版仅支持普通成年受雇员工。');if(Number(g)<=2000)throw Error('月薪不超过 €2,000：涉及 Minijob／Midijob，本版不支持。');const pvz=!parent&&born<=2002?1:0,pva=parent?Math.min(4,Math.max(0,n-1)):0,pvr=new Big('.018').plus(pvz?'.006':new Big('-.0025').times(pva));const inputs={RE4:g.times(100).toString(),LZZ:2,STKL:klass,af:klass===4?1:0,f:klass===4?Number($('factor').value):1,KVZ:kvz,PVZ:pvz,PVA:pva,ZKF:z,R:Number($('church').value),LZZFREIB:new Big($('free').value).times(100).div(12).round(0,0).toString(),LZZHINZU:new Big($('add').value).times(100).div(12).round(0,0).toString()};let p=pap(inputs),rv=contribution(Big(g).lt(8450)?g:8450,'.093'),av=contribution(Big(g).lt(8450)?g:8450,'.013'),base=Big(g).lt('5812.50')?g:'5812.50',kv=contribution(base,new Big('.073').plus(new Big(kvz).div(200))),pv=contribution(base,pvr),tax=Number(p.LSTLZZ),sol=Number(p.SOLZLZZ),church=$('church').value==='1'?Number(new Big(p.BK).times('.08').round(0,1)):0;return {gross,tax,sol,church,rv,av,kv,pv,net:gross-tax-sol-church-rv-av-kv-pv,pvr:pvr.times(100).toString(),p};}
+function update(){try{if(!$('form').reportValidity())return;let unknown=$('zkf').value==='unknown',zs=unknown?[0,.5,1]:[Number($('zkf').value)],rs=zs.map(calculate),r=rs[0];$('error').textContent='';$('results').hidden=false;$('net').textContent='€ '+money(r.net/100*Number($('view').value));let labels=[['gross','税前工资','Brutto'],['tax','工资预扣所得税','Lohnsteuer'],['sol','团结附加税','Solidaritätszuschlag'],['church','教会税','Kirchensteuer · 巴伐利亚 8%'],['rv','养老保险','Rentenversicherung · 9.3%'],['av','失业保险','Arbeitslosenversicherung · 1.3%'],['kv','医疗保险','Krankenversicherung · '+(7.3+Number($('kvz').value)/2).toFixed(3)+'%'],['pv','护理保险','Pflegeversicherung · '+r.pvr+'%'],['net','税后净工资','Nettogehalt']];$('rows').innerHTML=labels.map(([key,cn,de])=>`<tr class="${key==='net'?'net':''}"><td>${cn}<small>${de}</small></td><td>${money(r[key]/100)}</td><td>${money(r[key]*12/100)}</td></tr>`).join('');$('ratio').textContent='净额占税前 '+(r.net/r.gross*100).toFixed(2)+'% · 年度列＝12 次等额月度工资累计';$('bar').innerHTML=[['#176359',r.net],['#526873',r.tax+r.sol+r.church],['#bbc8cc',r.rv+r.av+r.kv+r.pv]].map(([c,v])=>`<span style="background:${c};width:${v/r.gross*100}%"></span>`).join('');$('scenario').textContent=unknown?'ZKF 未确认，以下均为情景而非认定：'+rs.map((a,i)=>`ZKF ${zs[i]} → 月净额 €${money(a.net/100)}，Soli €${money(a.sol/100)}`).join('；')+(rs.every(a=>a.net===r.net)?'。本组参数下三个情景净额相同。':'。上表暂展示 ZKF 0 情景，请选定系数查看相应明细。'):'当前显示 ZKF '+zs[0]+' 情景，请以 ELStAM 核实。';$('diagnostic').textContent='审计参数：护理附加费／减免已按所填身份处理；工资税使用全年推算后按月分摊。';window.lastResults=rs;}catch(e){$('error').textContent=e.message;$('results').hidden=true;}}
+$('form').addEventListener('input',update);$('form').addEventListener('change',update);$('form').addEventListener('submit',e=>{e.preventDefault();update();});$('form').addEventListener('reset',()=>setTimeout(update,0));$('view').addEventListener('change',update);update();
+</script></html>
